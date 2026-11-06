@@ -1,0 +1,161 @@
+# CiteGuard
+
+**LLM-based fake citation detection and verification.** CiteGuard reads a paper, a BibTeX file, a
+reference list or a chatbot's answer. For every citation it:
+
+1. **Detects** suspicious ones: an instant offline risk score.
+2. **Verifies** each against doi.org, Crossref, OpenAlex, Semantic Scholar, arXiv and PubMed.
+3. **Explains** the verdict with evidence: which database said what, and which fields disagree.
+4. **Suggests** a fix: the corrected citation for real papers, or real alternatives for fabricated ones.
+
+The LLM (Groq) parses messy references, picks between close candidates, reformulates failed
+searches, writes explanations and ranks alternatives. It never decides on its own that a paper
+exists. Existence is established by retrieval and deterministic matching, and every LLM
+explanation is checked against the evidence before it is shown.
+
+| Verdict | Meaning |
+| --- | --- |
+| `VERIFIED` | Matches a real publication record |
+| `VERIFIED_WITH_ERRORS` | Real paper, cited with wrong details (year, venue, pages, DOI…) |
+| `MISATTRIBUTED` | Real title, but wrong authors, or a DOI that belongs to another paper |
+| `FABRICATED` | No such publication in any database searched |
+| `UNVERIFIABLE` | Not enough evidence either way (books, theses, sources down). Not "fake" |
+
+See [docs/DESIGN.md](docs/DESIGN.md) for the architecture, with diagrams, and [docs/EVALUATION.md](docs/EVALUATION.md) for results.
+
+## Quick start
+
+Requirements: Python 3.12+, Node 22+. Docker is needed only for the full stack.
+
+```bash
+make install                       # backend venv + frontend deps
+cp .env.example .env               # add GROQ_API_KEY and CONTACT_EMAIL
+```
+
+### Command line
+
+```bash
+cd backend
+.venv/bin/citeguard check tests/fixtures/sample_mixed.bib            # BibTeX
+.venv/bin/citeguard check paper.pdf --style ieee                      # PDF / DOCX / .tex / .md / .txt
+.venv/bin/citeguard check -c "Smith, J. (2021). Some title. Nature."  # one citation
+.venv/bin/citeguard check refs.bib --format json -o report.json
+.venv/bin/citeguard check refs.bib --fail-on FABRICATED,MISATTRIBUTED  # CI gate: exit 1 on findings
+.venv/bin/citeguard check refs.bib --no-llm                           # deterministic mode
+.venv/bin/citeguard sources                                           # probe database health
+```
+
+### Web app (development)
+
+```bash
+make api    # http://127.0.0.1:8000  (API docs at /docs; auth off, SQLite, in-process jobs)
+make web    # http://localhost:5173
+```
+
+### Full stack (Docker)
+
+```bash
+make up     # Postgres, Redis, API, ARQ worker, nginx + SPA on http://localhost:$WEB_PORT (default 8080)
+docker compose -f deploy/docker-compose.yml --env-file .env --profile pdf up -d   # + GROBID
+docker compose -f deploy/docker-compose.yml exec api citeguard create-key --name alice
+```
+
+## API
+
+All endpoints are under `/api/v1` and need `X-API-Key: <key>` (or `Authorization: Bearer <key>`)
+unless `AUTH_ENABLED=false`. The OpenAPI spec is at [docs/openapi.json](docs/openapi.json),
+and Swagger UI is served at `/docs` (also through nginx in the Docker stack).
+
+```bash
+# start a check (202 + id), then stream progress
+curl -s -X POST localhost:8000/api/v1/checks -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+     -d '{"bibtex": "@article{x, title={Deep learning}, author={LeCun, Yann}, journal={Nature}, year={2016}}"}'
+curl -N localhost:8000/api/v1/checks/$ID/events -H "X-API-Key: $KEY"       # server-sent events
+curl -s localhost:8000/api/v1/checks/$ID -H "X-API-Key: $KEY"              # status + verdicts
+curl -s "localhost:8000/api/v1/checks/$ID/export?format=bib" -H "X-API-Key: $KEY"   # corrected .bib
+
+# upload a document
+curl -s -X POST localhost:8000/api/v1/checks/upload -H "X-API-Key: $KEY" -F file=@paper.pdf
+
+# one citation, answered inline
+curl -s -X POST "localhost:8000/api/v1/checks?sync=true" -H "X-API-Key: $KEY" \
+     -H 'Content-Type: application/json' -d '{"citation": "Vaswani et al. (2017). Attention is all you need. NeurIPS."}'
+
+# ...and does the paper support what it is cited for? (claim check, needs GROQ_API_KEY)
+curl -s -X POST "localhost:8000/api/v1/checks?sync=true" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+     -d '{"citation": "Vaswani et al. (2017). Attention is all you need. NeurIPS.",
+          "options": {"claim": "Transformers reduce protein misfolding in mice [1]."}}'
+```
+
+**Claim check (opt-in, beta).** With `"check_claims": true` (or `"claim"` for one citation),
+each real paper's abstract is compared with the sentences that cite it: `SUPPORTS`, `PARTIAL`,
+`NOT_SUPPORTED` or `CANNOT_DETERMINE`, with a quote from the abstract. Only the abstract is read,
+so treat it as a hint. `NOT_SUPPORTED` adds the `CLAIM_NOT_SUPPORTED` flag and suggests papers
+that match the sentence.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/checks` | Text / BibTeX / single citation (`?sync=true` for one citation) |
+| POST | `/checks/upload` | PDF, DOCX, .bib, .tex, .md, .txt (≤ 25 MB) |
+| GET | `/checks`, `/checks/{id}` | List / status and per-citation summaries |
+| GET | `/checks/{id}/events` | SSE: `snapshot`, `citation.verified`, `citation.enriched`, `check.completed` |
+| GET | `/checks/{id}/citations/{n}` | Full result: evidence trail, candidates, explanation, suggestions |
+| GET | `/checks/{id}/export?format=html\|bib\|csv\|md\|json` | Reports and the corrected bibliography |
+| POST | `/checks/{id}/citations/{n}/feedback` | "This verdict is wrong" (feeds the evaluation set) |
+| DELETE | `/checks/{id}` | Delete a check and its results |
+| GET | `/sources/health`, `/healthz`, `/readyz`, `/metrics` | Operations |
+
+## Configuration
+
+Settings come from environment variables or `.env` (see [.env.example](.env.example)).
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GROQ_API_KEY` | — | Enables LLM parsing, adjudication, explanations and alternatives |
+| `CONTACT_EMAIL` | — | Sent to Crossref / OpenAlex / NCBI polite pools |
+| `LLM_MODEL_PARSE` / `_ADJUDICATE` / `_REFORMULATE` / `_EXPLAIN` / `_SUGGEST` / `_CLAIMS` | `openai/gpt-oss-20b` / `-120b` | Per-stage Groq model |
+| `LLM_TPM`, `LLM_TPD`, `LLM_RPM` | 8000 / 200000 / 30 | Groq per-model limits (raise on paid tiers) |
+| `LLM_DAILY_TOKEN_BUDGET` | none | Hard daily cap; explanations fall back to templates when hit |
+| `OPENALEX_API_KEY` | — | **Recommended.** Anonymous OpenAlex use shares a small daily budget per IP; a free key gives 10,000 credits/day |
+| `S2_API_KEY`, `NCBI_API_KEY` | — | Higher Semantic Scholar / PubMed rate limits |
+| `ENABLED_SOURCES` | all but DBLP | JSON list, e.g. `["doi","crossref","openalex"]` |
+| `PARSER_STRATEGY` | `hybrid` | `hybrid` (GROBID → LLM → heuristic), `llm`, `grobid`, `heuristic` |
+| `GROBID_URL` | — | e.g. `http://grobid:8070` |
+| `DATABASE_URL` | SQLite file | `postgresql+asyncpg://…` in production |
+| `JOB_BACKEND` | `inline` | `arq` for Redis-backed workers |
+| `AUTH_ENABLED`, `ADMIN_API_KEY` | `true`, — | API-key auth |
+| `RETENTION_DAYS` | 30 | Checks are purged after this; uploaded files right after processing |
+
+## Repository layout
+
+```text
+backend/src/citeguard/
+  ingest/    PDF (GROBID, pypdfium2), DOCX, LaTeX, BibTeX, text: reference lists + citation contexts
+  parse/     identifier regexes (authoritative), heuristic parser
+  screen/    offline risk signals
+  sources/   doi.org, Crossref, OpenAlex, Semantic Scholar, arXiv, PubMed, DBLP + cache / limits / breakers
+  match/     normalization, names, venues, record linkage
+  verify/    orchestrator and deterministic decision rules
+  llm/       Groq client (strict JSON schema), budgets, prompts, LLM services
+  explain/   template explanations, evidence bundle, grounding validator
+  suggest/   corrections, alternatives, formatting (APA / IEEE / BibTeX)
+  report/    HTML / CSV / Markdown / corrected BibTeX exporters
+  api/ db/ worker/   FastAPI service, persistence, ARQ worker, SSE event bus
+  eval/      CiteBench builder, runner, metrics, linkage fitting
+frontend/    React + TypeScript + Tailwind SPA (typed from the OpenAPI spec)
+deploy/      docker-compose (Postgres, Redis, API, worker, web, GROBID)
+eval/        datasets and run outputs
+docs/        design, evaluation, runbook, OpenAPI spec
+```
+
+## Development
+
+```bash
+make test        # backend pytest + frontend vitest
+make lint        # ruff
+make typecheck   # mypy --strict + tsc
+make openapi     # regenerate docs/openapi.json and the frontend's types
+```
+
+Privacy: only reference strings and citing sentences are sent to the LLM, never the full
+manuscript. Uploaded files are deleted as soon as a check finishes.

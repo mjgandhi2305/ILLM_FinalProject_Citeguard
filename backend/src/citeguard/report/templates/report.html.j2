@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CiteGuard report</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --text: #1d1d1f; --muted: #5f6368; --border: #e3e3df;
+    --ok: #0f7b4d; --ok-bg: #e3f4ec; --warn: #9a5b00; --warn-bg: #fdf1dc;
+    --orange: #b2470b; --orange-bg: #fde8db; --bad: #b42318; --bad-bg: #fde4e1;
+    --grey: #5f6368; --grey-bg: #eceef0; --link: #1a5fb4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --surface: #1d1d20; --text: #ececec; --muted: #a0a0a8; --border: #2e2e33;
+      --ok: #5cd6a0; --ok-bg: #12352a; --warn: #f2c063; --warn-bg: #3a2c10;
+      --orange: #f5a06a; --orange-bg: #3d2112; --bad: #ff8a80; --bad-bg: #401816;
+      --grey: #b0b4ba; --grey-bg: #2a2c30; --link: #8ab4f8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .pill { border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+  .VERIFIED { color: var(--ok); background: var(--ok-bg); }
+  .VERIFIED_WITH_ERRORS { color: var(--warn); background: var(--warn-bg); }
+  .MISATTRIBUTED { color: var(--orange); background: var(--orange-bg); }
+  .FABRICATED { color: var(--bad); background: var(--bad-bg); }
+  .UNVERIFIABLE { color: var(--grey); background: var(--grey-bg); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+          padding: 18px 20px; margin-bottom: 14px; break-inside: avoid; }
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .conf { color: var(--muted); font-size: 13px; margin-left: auto; }
+  .raw { font-style: italic; color: var(--muted); margin: 0 0 10px; overflow-wrap: anywhere; }
+  .headline { font-weight: 600; margin: 0 0 6px; }
+  ol { margin: 6px 0 8px; padding-left: 22px; }
+  li { margin: 3px 0; overflow-wrap: anywhere; }
+  .ev a { font-size: 12px; color: var(--link); text-decoration: none; margin-left: 6px; }
+  .rec { color: var(--muted); margin: 6px 0 0; }
+  .sugg { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+  .sugg h4 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+             color: var(--muted); }
+  .sugg p { margin: 4px 0; overflow-wrap: anywhere; }
+  .note { font-size: 13px; color: var(--muted); }
+  .flags { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .claims { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+  .claims h4 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+               color: var(--muted); }
+  .claim { margin: 8px 0; }
+  .claim .label { font-weight: 600; }
+  .claim .NOT_SUPPORTED { color: var(--bad); }
+  .claim .PARTIAL { color: var(--warn); }
+  .claim .SUPPORTS { color: var(--ok); }
+  .claim blockquote { margin: 4px 0 0 12px; color: var(--muted); font-size: 13px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
+  @media print { body { background: #fff; } .card { border-color: #ccc; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Citation check report</h1>
+  <div class="meta">
+    {{ meta.filename or meta.input_kind }} · {{ citations|length }} citations · generated {{ generated }}
+    {% if meta.summary and meta.summary.llm_mode %} · explanations: {{ meta.summary.llm_mode }}{% endif %}
+  </div>
+  {% if meta.summary %}
+  <div class="summary">
+    {% for verdict, n in meta.summary.by_verdict.items() if n %}
+      <span class="pill {{ verdict }}">{{ n }} {{ labels[verdict] }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% for c in citations %}
+  {% set evidence = {} %}
+  {% for e in c.evidence %}{% set _ = evidence.update({e.id: e}) %}{% endfor %}
+  <section class="card">
+    <div class="card-head">
+      <span class="num">#{{ c.index + 1 }}</span>
+      <span class="pill {{ c.verdict.value }}">{{ labels[c.verdict.value] }}</span>
+      <span class="conf">confidence {{ "%.2f"|format(c.confidence) }}</span>
+    </div>
+    <p class="raw">{{ c.reference.raw }}</p>
+    {% if c.explanation %}
+      <p class="headline">{{ c.explanation.headline }}</p>
+      {% if c.explanation.reasons %}
+      <ol>
+        {% for r in c.explanation.reasons %}
+        <li>{{ r.text }}
+          <span class="ev">
+          {% for eid in r.evidence_ids if eid in evidence and evidence[eid].url %}
+            <a href="{{ evidence[eid].url|safe_url }}" rel="noopener noreferrer">{{ source_names.get(evidence[eid].source, evidence[eid].source) }}</a>
+          {% endfor %}
+          </span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      <p class="rec">→ {{ c.explanation.recommendation }}</p>
+    {% endif %}
+    {% if c.claim_checks %}
+    <div class="claims"><h4>Claim check (abstract only; a hint, not a verdict)</h4>
+      {% for ch in c.claim_checks %}
+      <div class="claim">
+        <span class="label {{ ch.label.value }}">{{ claim_labels[ch.label.value] }}:</span>
+        “{{ ch.claim }}” {{ ch.rationale }}
+        {% if ch.quote %}<blockquote>Abstract: “{{ ch.quote }}”
+          {% if ch.abstract_url %}<a href="{{ ch.abstract_url|safe_url }}" rel="noopener noreferrer">source</a>{% endif %}
+        </blockquote>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% set fixes = c.suggestions|selectattr("kind", "equalto", "correction")|list %}
+    {% set alts = c.suggestions|selectattr("kind", "equalto", "alternative")|list %}
+    {% if fixes %}
+    <div class="sugg"><h4>Corrected citation</h4>
+      {% for s in fixes %}<p>{{ s.formatted.get(style, "") }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    {% if alts %}
+    <div class="sugg"><h4>Real alternatives (read before citing)</h4>
+      {% for s in alts %}
+        <p>{{ loop.index }}. {{ s.formatted.get(style, "") }}</p>
+        {% if s.relevance_note %}<p class="note">{{ s.relevance_note }}</p>{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if c.flags %}<div class="flags">Flags: {{ c.flags|join(", ") }}</div>{% endif %}
+  </section>
+  {% endfor %}
+  <footer>Generated by CiteGuard. Verdicts are based on Crossref, OpenAlex, Semantic Scholar, arXiv,
+  PubMed and doi.org lookups; "unverifiable" does not mean fake. Review all suggestions before use.</footer>
+</main>
+</body>
+</html>

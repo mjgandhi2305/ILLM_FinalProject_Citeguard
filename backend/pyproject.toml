@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "citeguard"
+version = "0.1.0"
+description = "LLM-based fake citation detection and verification"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "httpx>=0.28",
+    "rapidfuzz>=3.10",
+    "bibtexparser>=2.0",
+    "pylatexenc>=2.10",
+    "typer>=0.15",
+    "rich>=13.9",
+    "diskcache>=5.6",
+    "structlog>=24.4",
+    "groq>=1.0",
+    "defusedxml>=0.7",
+]
+
+[project.optional-dependencies]
+server = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "arq>=0.26",
+    "redis>=5.2",
+    "python-multipart>=0.0.18",
+    "argon2-cffi>=23.1",
+    "prometheus-client>=0.21",
+    "jinja2>=3.1",
+    "sse-starlette>=2.1",
+    "aiosqlite>=0.20",
+]
+ingest = [
+    "pypdfium2>=4.30",
+    "python-docx>=1.1",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "respx>=0.22",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "hypothesis>=6.120",
+    "aiosqlite>=0.20",
+]
+
+[project.scripts]
+citeguard = "citeguard.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/citeguard"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC", "S"]
+ignore = ["S101", "RUF001", "RUF002", "RUF003", "E501"]  # ruff format owns line length
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B011"]
+"src/citeguard/eval/**" = ["S311"]  # sampling, not cryptography
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "live: hits real external APIs (deselect with -m 'not live')",
+]
+addopts = "-m 'not live'"

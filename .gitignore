@@ -1,0 +1,12 @@
+.env
+.DS_Store
+**/__pycache__/
+backend/.venv/
+backend/data/
+*.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+frontend/node_modules/
+frontend/dist/
+eval/runs/

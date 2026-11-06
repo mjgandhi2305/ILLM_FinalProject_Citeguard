@@ -1,0 +1,74 @@
+# Production-style stack: docker compose -f deploy/docker-compose.yml --env-file .env up -d
+# Add `--profile pdf` to also run GROBID (best PDF reference extraction, ~1 GB image).
+name: citeguard
+
+x-backend: &backend
+  build: ../backend
+  env_file: ../.env
+  environment:
+    DATABASE_URL: postgresql+asyncpg://citeguard:${POSTGRES_PASSWORD:-citeguard}@postgres:5432/citeguard
+    REDIS_URL: redis://redis:6379/0
+    JOB_BACKEND: arq
+    CACHE_BACKEND: redis
+    DB_AUTO_CREATE: "false"
+    LOG_JSON: "true"
+    GROBID_URL: ${GROBID_URL:-}
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: citeguard
+      POSTGRES_USER: citeguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-citeguard}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citeguard"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+    restart: unless-stopped
+
+  migrate:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *backend
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  worker:
+    <<: *backend
+    command: ["arq", "citeguard.worker.arq_worker.WorkerSettings"]
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  web:
+    build: ../frontend
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on: [api]
+    restart: unless-stopped
+
+  grobid:
+    image: grobid/grobid:0.9.1-crf
+    profiles: [pdf]
+    restart: unless-stopped
+
+volumes:
+  pgdata:

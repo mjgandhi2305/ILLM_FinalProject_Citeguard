@@ -1,0 +1,2592 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "CiteGuard API",
+  "description": "Detects fabricated and inaccurate citations, verifies them against scholarly databases, explains every verdict with evidence and suggests real alternatives.",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/v1/checks": {
+   "post": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Check pasted text, a BibTeX bibliography or a single citation",
+    "operationId": "create_check_api_v1_checks_post",
+    "parameters": [
+     {
+      "name": "sync",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "description": "Verify a single citation inline",
+       "default": false,
+       "title": "Sync"
+      },
+      "description": "Verify a single citation inline"
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CheckCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CheckCreated"
+        }
+       }
+      }
+     },
+     "200": {
+      "description": "`sync=true` with a single citation: the full result"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "List Checks",
+    "operationId": "list_checks_api_v1_checks_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CheckListItem"
+         },
+         "title": "Response List Checks Api V1 Checks Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/upload": {
+   "post": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Check an uploaded document (.pdf, .docx, .bib, .tex, .txt, .md)",
+    "operationId": "upload_check_api_v1_checks_upload_post",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_upload_check_api_v1_checks_upload_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CheckCreated"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/{check_id}": {
+   "get": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Get Check",
+    "operationId": "get_check_api_v1_checks__check_id__get",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CheckOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Delete Check",
+    "operationId": "delete_check_api_v1_checks__check_id__delete",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/{check_id}/events": {
+   "get": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Server-sent events: snapshot, citation.verified, citation.enriched, check.completed",
+    "operationId": "check_events_api_v1_checks__check_id__events_get",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/{check_id}/citations/{index}": {
+   "get": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Get Citation",
+    "operationId": "get_citation_api_v1_checks__check_id__citations__index__get",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "index",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Index"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CitationResult"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/{check_id}/export": {
+   "get": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Export Check",
+    "operationId": "export_check_api_v1_checks__check_id__export_get",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "format",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "json",
+        "csv",
+        "md",
+        "html",
+        "bib"
+       ],
+       "type": "string",
+       "default": "json",
+       "title": "Format"
+      }
+     },
+     {
+      "name": "style",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "apa",
+        "ieee",
+        "bibtex"
+       ],
+       "type": "string",
+       "default": "apa",
+       "title": "Style"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/checks/{check_id}/citations/{index}/feedback": {
+   "post": {
+    "tags": [
+     "checks"
+    ],
+    "summary": "Add Feedback",
+    "operationId": "add_feedback_api_v1_checks__check_id__citations__index__feedback_post",
+    "parameters": [
+     {
+      "name": "check_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Check Id"
+      }
+     },
+     {
+      "name": "index",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Index"
+      }
+     },
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FeedbackIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FeedbackOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/sources/health": {
+   "get": {
+    "tags": [
+     "checks",
+     "ops"
+    ],
+    "summary": "Sources Health",
+    "operationId": "sources_health_api_v1_sources_health_get",
+    "parameters": [
+     {
+      "name": "authorization",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Authorization"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SourceHealth"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/healthz": {
+   "get": {
+    "tags": [
+     "ops"
+    ],
+    "summary": "Healthz",
+    "operationId": "healthz_healthz_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "type": "object",
+         "title": "Response Healthz Healthz Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/readyz": {
+   "get": {
+    "tags": [
+     "ops"
+    ],
+    "summary": "Readyz",
+    "operationId": "readyz_readyz_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "Author": {
+    "properties": {
+     "family": {
+      "type": "string",
+      "title": "Family"
+     },
+     "given": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Given"
+     }
+    },
+    "type": "object",
+    "required": [
+     "family"
+    ],
+    "title": "Author"
+   },
+   "Body_upload_check_api_v1_checks_upload_post": {
+    "properties": {
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     },
+     "options": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Options",
+      "description": "CheckOptions as JSON"
+     }
+    },
+    "type": "object",
+    "required": [
+     "file"
+    ],
+    "title": "Body_upload_check_api_v1_checks_upload_post"
+   },
+   "Candidate": {
+    "properties": {
+     "record": {
+      "$ref": "#/components/schemas/Record"
+     },
+     "features": {
+      "$ref": "#/components/schemas/MatchFeatures"
+     },
+     "probability": {
+      "type": "number",
+      "title": "Probability"
+     },
+     "evidence_id": {
+      "type": "string",
+      "title": "Evidence Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "record",
+     "features",
+     "probability",
+     "evidence_id"
+    ],
+    "title": "Candidate"
+   },
+   "CheckCreate": {
+    "properties": {
+     "text": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     },
+     "bibtex": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bibtex"
+     },
+     "citation": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 5000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Citation"
+     },
+     "options": {
+      "$ref": "#/components/schemas/CheckOptions"
+     }
+    },
+    "type": "object",
+    "title": "CheckCreate",
+    "description": "Exactly one of `text`, `bibtex` or `citation`."
+   },
+   "CheckCreated": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "links": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Links"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "status",
+     "links"
+    ],
+    "title": "CheckCreated"
+   },
+   "CheckListItem": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "input_kind": {
+      "type": "string",
+      "title": "Input Kind"
+     },
+     "filename": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Filename"
+     },
+     "progress_total": {
+      "type": "integer",
+      "title": "Progress Total"
+     },
+     "progress_done": {
+      "type": "integer",
+      "title": "Progress Done"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "status",
+     "input_kind",
+     "filename",
+     "progress_total",
+     "progress_done",
+     "created_at",
+     "summary"
+    ],
+    "title": "CheckListItem"
+   },
+   "CheckOptions": {
+    "properties": {
+     "use_llm": {
+      "type": "boolean",
+      "title": "Use Llm",
+      "default": true
+     },
+     "explain": {
+      "type": "boolean",
+      "title": "Explain",
+      "default": true
+     },
+     "suggest_alternatives": {
+      "type": "boolean",
+      "title": "Suggest Alternatives",
+      "default": true
+     },
+     "styles": {
+      "items": {
+       "type": "string",
+       "enum": [
+        "apa",
+        "ieee",
+        "bibtex"
+       ]
+      },
+      "type": "array",
+      "title": "Styles"
+     },
+     "sources": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sources"
+     },
+     "check_claims": {
+      "type": "boolean",
+      "title": "Check Claims",
+      "description": "Check whether each real paper's abstract supports the sentences citing it (needs the LLM and in-text citations; a hint, not a verdict).",
+      "default": false
+     },
+     "claim": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Claim",
+      "description": "Single-citation input only: the sentence the citation is meant to support. Implies check_claims."
+     }
+    },
+    "type": "object",
+    "title": "CheckOptions"
+   },
+   "CheckOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "queued",
+       "running",
+       "completed",
+       "failed"
+      ],
+      "title": "Status"
+     },
+     "input_kind": {
+      "type": "string",
+      "title": "Input Kind"
+     },
+     "filename": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Filename"
+     },
+     "progress_total": {
+      "type": "integer",
+      "title": "Progress Total"
+     },
+     "progress_done": {
+      "type": "integer",
+      "title": "Progress Done"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "completed_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Completed At"
+     },
+     "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "citations": {
+      "items": {
+       "$ref": "#/components/schemas/CitationSummary"
+      },
+      "type": "array",
+      "title": "Citations"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "status",
+     "input_kind",
+     "filename",
+     "progress_total",
+     "progress_done",
+     "created_at",
+     "started_at",
+     "completed_at",
+     "expires_at",
+     "summary",
+     "warnings",
+     "error",
+     "citations"
+    ],
+    "title": "CheckOut"
+   },
+   "CitationResult": {
+    "properties": {
+     "index": {
+      "type": "integer",
+      "title": "Index"
+     },
+     "reference": {
+      "$ref": "#/components/schemas/ParsedReference"
+     },
+     "risk_score": {
+      "type": "number",
+      "title": "Risk Score",
+      "default": 0.0
+     },
+     "risk_signals": {
+      "items": {
+       "$ref": "#/components/schemas/RiskSignal"
+      },
+      "type": "array",
+      "title": "Risk Signals"
+     },
+     "verdict": {
+      "$ref": "#/components/schemas/Verdict",
+      "default": "UNVERIFIABLE"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence",
+      "default": 0.0
+     },
+     "flags": {
+      "items": {
+       "$ref": "#/components/schemas/Flag"
+      },
+      "type": "array",
+      "title": "Flags"
+     },
+     "discrepancies": {
+      "items": {
+       "$ref": "#/components/schemas/Discrepancy"
+      },
+      "type": "array",
+      "title": "Discrepancies"
+     },
+     "best_match": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Candidate"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "candidates": {
+      "items": {
+       "$ref": "#/components/schemas/Candidate"
+      },
+      "type": "array",
+      "title": "Candidates"
+     },
+     "evidence": {
+      "items": {
+       "$ref": "#/components/schemas/Evidence"
+      },
+      "type": "array",
+      "title": "Evidence"
+     },
+     "explanation": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Explanation"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "suggestions": {
+      "items": {
+       "$ref": "#/components/schemas/Suggestion"
+      },
+      "type": "array",
+      "title": "Suggestions"
+     },
+     "claim_checks": {
+      "items": {
+       "$ref": "#/components/schemas/ClaimCheck"
+      },
+      "type": "array",
+      "title": "Claim Checks"
+     },
+     "llm_usage": {
+      "$ref": "#/components/schemas/LLMUsage"
+     },
+     "duration_ms": {
+      "type": "integer",
+      "title": "Duration Ms",
+      "default": 0
+     },
+     "enriched": {
+      "type": "boolean",
+      "title": "Enriched",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "index",
+     "reference"
+    ],
+    "title": "CitationResult"
+   },
+   "CitationSummary": {
+    "properties": {
+     "index": {
+      "type": "integer",
+      "title": "Index"
+     },
+     "verdict": {
+      "$ref": "#/components/schemas/Verdict"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "risk_score": {
+      "type": "number",
+      "title": "Risk Score"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "raw": {
+      "type": "string",
+      "title": "Raw"
+     },
+     "headline": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Headline"
+     },
+     "explanation_mode": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "template",
+         "llm"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Explanation Mode"
+     },
+     "flags": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Flags"
+     },
+     "enriched": {
+      "type": "boolean",
+      "title": "Enriched"
+     },
+     "has_correction": {
+      "type": "boolean",
+      "title": "Has Correction"
+     },
+     "alternatives": {
+      "type": "integer",
+      "title": "Alternatives"
+     },
+     "claim_support": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ClaimSupport"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Most serious claim-check label, when claims were checked"
+     }
+    },
+    "type": "object",
+    "required": [
+     "index",
+     "verdict",
+     "confidence",
+     "risk_score",
+     "title",
+     "raw",
+     "headline",
+     "explanation_mode",
+     "flags",
+     "enriched",
+     "has_correction",
+     "alternatives"
+    ],
+    "title": "CitationSummary"
+   },
+   "CitationType": {
+    "type": "string",
+    "enum": [
+     "article-journal",
+     "paper-conference",
+     "preprint",
+     "book",
+     "chapter",
+     "thesis",
+     "report",
+     "webpage",
+     "dataset",
+     "other",
+     "unknown"
+    ],
+    "title": "CitationType"
+   },
+   "ClaimCheck": {
+    "properties": {
+     "claim": {
+      "type": "string",
+      "title": "Claim"
+     },
+     "label": {
+      "$ref": "#/components/schemas/ClaimSupport"
+     },
+     "rationale": {
+      "type": "string",
+      "title": "Rationale"
+     },
+     "quote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quote"
+     },
+     "abstract_source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Abstract Source"
+     },
+     "abstract_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Abstract Url"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "llm",
+       "none"
+      ],
+      "title": "Mode",
+      "default": "llm"
+     }
+    },
+    "type": "object",
+    "required": [
+     "claim",
+     "label",
+     "rationale"
+    ],
+    "title": "ClaimCheck",
+    "description": "Does the cited paper's abstract support the sentence that cites it? A hint, not a verdict:\nonly the abstract is read."
+   },
+   "ClaimSupport": {
+    "type": "string",
+    "enum": [
+     "SUPPORTS",
+     "PARTIAL",
+     "NOT_SUPPORTED",
+     "CANNOT_DETERMINE"
+    ],
+    "title": "ClaimSupport"
+   },
+   "Discrepancy": {
+    "properties": {
+     "code": {
+      "$ref": "#/components/schemas/DiscrepancyCode"
+     },
+     "severity": {
+      "$ref": "#/components/schemas/Severity"
+     },
+     "field": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Field"
+     },
+     "claimed": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Claimed"
+     },
+     "actual": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Actual"
+     },
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "evidence_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Evidence Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "severity",
+     "message"
+    ],
+    "title": "Discrepancy"
+   },
+   "DiscrepancyCode": {
+    "type": "string",
+    "enum": [
+     "ID_INVALID_SYNTAX",
+     "ID_NOT_REGISTERED",
+     "ID_RESOLVES_TO_DIFFERENT_WORK",
+     "TITLE_NOT_FOUND",
+     "TITLE_MISMATCH_MINOR",
+     "TITLE_MISMATCH_MAJOR",
+     "FIRST_AUTHOR_MISMATCH",
+     "AUTHORS_MISSING",
+     "AUTHORS_EXTRA",
+     "AUTHORS_FABRICATED",
+     "AUTHORS_REORDERED",
+     "YEAR_MISMATCH",
+     "VENUE_MISMATCH",
+     "VOLUME_ISSUE_PAGES_MISMATCH",
+     "PAGES_IMPLAUSIBLE",
+     "ARXIV_ID_DATE_INCONSISTENT",
+     "FUTURE_DATE",
+     "CHIMERIC_TITLE_AUTHORS",
+     "RETRACTED"
+    ],
+    "title": "DiscrepancyCode"
+   },
+   "Evidence": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "operation": {
+      "type": "string",
+      "enum": [
+       "lookup",
+       "search",
+       "registry"
+      ],
+      "title": "Operation"
+     },
+     "query": {
+      "type": "string",
+      "title": "Query"
+     },
+     "status": {
+      "$ref": "#/components/schemas/LookupStatus"
+     },
+     "records": {
+      "items": {
+       "$ref": "#/components/schemas/Record"
+      },
+      "type": "array",
+      "title": "Records"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Url"
+     },
+     "latency_ms": {
+      "type": "integer",
+      "title": "Latency Ms",
+      "default": 0
+     },
+     "cached": {
+      "type": "boolean",
+      "title": "Cached",
+      "default": false
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "source",
+     "operation",
+     "query",
+     "status"
+    ],
+    "title": "Evidence",
+    "description": "One source interaction, kept as an auditable piece of evidence."
+   },
+   "Explanation": {
+    "properties": {
+     "headline": {
+      "type": "string",
+      "title": "Headline"
+     },
+     "reasons": {
+      "items": {
+       "$ref": "#/components/schemas/Reason"
+      },
+      "type": "array",
+      "title": "Reasons"
+     },
+     "recommendation": {
+      "type": "string",
+      "title": "Recommendation"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "template",
+       "llm"
+      ],
+      "title": "Mode",
+      "default": "template"
+     }
+    },
+    "type": "object",
+    "required": [
+     "headline",
+     "recommendation"
+    ],
+    "title": "Explanation"
+   },
+   "FeedbackIn": {
+    "properties": {
+     "user_verdict": {
+      "$ref": "#/components/schemas/Verdict"
+     },
+     "comment": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Comment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "user_verdict"
+    ],
+    "title": "FeedbackIn"
+   },
+   "FeedbackOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "received": {
+      "type": "boolean",
+      "title": "Received",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "id"
+    ],
+    "title": "FeedbackOut"
+   },
+   "FieldDiff": {
+    "properties": {
+     "field": {
+      "type": "string",
+      "title": "Field"
+     },
+     "claimed": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Claimed"
+     },
+     "actual": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Actual"
+     }
+    },
+    "type": "object",
+    "required": [
+     "field",
+     "claimed",
+     "actual"
+    ],
+    "title": "FieldDiff"
+   },
+   "Flag": {
+    "type": "string",
+    "enum": [
+     "RETRACTED",
+     "PREPRINT_HAS_PUBLISHED_VERSION",
+     "CLAIM_NOT_SUPPORTED",
+     "LOW_PARSE_CONFIDENCE",
+     "LLM_ADJUDICATED",
+     "SOURCES_DEGRADED"
+    ],
+    "title": "Flag"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "Identifiers": {
+    "properties": {
+     "doi": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Doi"
+     },
+     "arxiv_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Arxiv Id"
+     },
+     "pmid": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pmid"
+     },
+     "isbn": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isbn"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Url"
+     }
+    },
+    "type": "object",
+    "title": "Identifiers"
+   },
+   "LLMUsage": {
+    "properties": {
+     "calls": {
+      "type": "integer",
+      "title": "Calls",
+      "default": 0
+     },
+     "input_tokens": {
+      "type": "integer",
+      "title": "Input Tokens",
+      "default": 0
+     },
+     "output_tokens": {
+      "type": "integer",
+      "title": "Output Tokens",
+      "default": 0
+     },
+     "cached_calls": {
+      "type": "integer",
+      "title": "Cached Calls",
+      "default": 0
+     },
+     "failures": {
+      "type": "integer",
+      "title": "Failures",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "title": "LLMUsage"
+   },
+   "LookupStatus": {
+    "type": "string",
+    "enum": [
+     "found",
+     "not_found",
+     "error",
+     "rate_limited",
+     "unavailable"
+    ],
+    "title": "LookupStatus"
+   },
+   "MatchFeatures": {
+    "properties": {
+     "title_sim": {
+      "type": "number",
+      "title": "Title Sim"
+     },
+     "first_author": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Author"
+     },
+     "author_f1": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Author F1"
+     },
+     "author_order": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Author Order"
+     },
+     "year_delta": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Year Delta"
+     },
+     "venue_sim": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Venue Sim"
+     },
+     "id_match": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id Match"
+     },
+     "pages_match": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pages Match"
+     },
+     "volume_match": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume Match"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title_sim"
+    ],
+    "title": "MatchFeatures"
+   },
+   "ParsedReference": {
+    "properties": {
+     "raw": {
+      "type": "string",
+      "title": "Raw"
+     },
+     "authors": {
+      "items": {
+       "$ref": "#/components/schemas/Author"
+      },
+      "type": "array",
+      "title": "Authors"
+     },
+     "authors_truncated": {
+      "type": "boolean",
+      "title": "Authors Truncated",
+      "default": false
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "container_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Container Title"
+     },
+     "year": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Year"
+     },
+     "volume": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume"
+     },
+     "issue": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue"
+     },
+     "pages": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pages"
+     },
+     "publisher": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Publisher"
+     },
+     "type": {
+      "$ref": "#/components/schemas/CitationType",
+      "default": "unknown"
+     },
+     "ids": {
+      "$ref": "#/components/schemas/Identifiers"
+     },
+     "parse_method": {
+      "type": "string",
+      "enum": [
+       "bibtex",
+       "grobid",
+       "llm",
+       "heuristic",
+       "structured"
+      ],
+      "title": "Parse Method",
+      "default": "heuristic"
+     },
+     "parse_confidence": {
+      "type": "number",
+      "title": "Parse Confidence",
+      "default": 0.5
+     },
+     "key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Key"
+     },
+     "contexts": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Contexts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "raw"
+    ],
+    "title": "ParsedReference",
+    "description": "A citation as the *author* wrote it. Never corrected; that is the whole point."
+   },
+   "Reason": {
+    "properties": {
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "evidence_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Evidence Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "text"
+    ],
+    "title": "Reason"
+   },
+   "Record": {
+    "properties": {
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "source_id": {
+      "type": "string",
+      "title": "Source Id"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Url"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "authors": {
+      "items": {
+       "$ref": "#/components/schemas/Author"
+      },
+      "type": "array",
+      "title": "Authors"
+     },
+     "year": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Year"
+     },
+     "container_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Container Title"
+     },
+     "volume": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume"
+     },
+     "issue": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue"
+     },
+     "pages": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pages"
+     },
+     "publisher": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Publisher"
+     },
+     "type": {
+      "$ref": "#/components/schemas/CitationType",
+      "default": "unknown"
+     },
+     "doi": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Doi"
+     },
+     "arxiv_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Arxiv Id"
+     },
+     "pmid": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pmid"
+     },
+     "abstract": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Abstract"
+     },
+     "is_retracted": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Retracted"
+     },
+     "cited_by": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cited By"
+     }
+    },
+    "type": "object",
+    "required": [
+     "source",
+     "source_id"
+    ],
+    "title": "Record",
+    "description": "A bibliographic record returned by a scholarly source."
+   },
+   "RiskSignal": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "weight": {
+      "type": "number",
+      "title": "Weight"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "message",
+     "weight"
+    ],
+    "title": "RiskSignal"
+   },
+   "Severity": {
+    "type": "string",
+    "enum": [
+     "info",
+     "minor",
+     "major",
+     "critical"
+    ],
+    "title": "Severity"
+   },
+   "SourceHealth": {
+    "properties": {
+     "sources": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Sources"
+     },
+     "llm": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Llm"
+     }
+    },
+    "type": "object",
+    "required": [
+     "sources",
+     "llm"
+    ],
+    "title": "SourceHealth"
+   },
+   "Suggestion": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "correction",
+       "alternative"
+      ],
+      "title": "Kind"
+     },
+     "record": {
+      "$ref": "#/components/schemas/Record"
+     },
+     "formatted": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Formatted"
+     },
+     "diffs": {
+      "items": {
+       "$ref": "#/components/schemas/FieldDiff"
+      },
+      "type": "array",
+      "title": "Diffs"
+     },
+     "relevance_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Relevance Note"
+     },
+     "method": {
+      "type": "string",
+      "enum": [
+       "deterministic",
+       "keyword",
+       "llm"
+      ],
+      "title": "Method",
+      "default": "deterministic"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "record"
+    ],
+    "title": "Suggestion"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "Verdict": {
+    "type": "string",
+    "enum": [
+     "VERIFIED",
+     "VERIFIED_WITH_ERRORS",
+     "MISATTRIBUTED",
+     "FABRICATED",
+     "UNVERIFIABLE"
+    ],
+    "title": "Verdict"
+   }
+  }
+ }
+}
