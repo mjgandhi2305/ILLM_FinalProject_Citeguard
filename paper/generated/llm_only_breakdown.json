@@ -1,0 +1,80 @@
+{
+  "gpt-oss-20b": {
+    "Correct": [
+      60,
+      34,
+      6,
+      20
+    ],
+    "Real w/ errors": [
+      30,
+      4,
+      22,
+      4
+    ],
+    "Misattributed": [
+      20,
+      5,
+      11,
+      4
+    ],
+    "Fabricated": [
+      40,
+      1,
+      37,
+      2
+    ]
+  },
+  "qwen3.8-27b": {
+    "Correct": [
+      60,
+      25,
+      19,
+      16
+    ],
+    "Real w/ errors": [
+      30,
+      2,
+      22,
+      6
+    ],
+    "Misattributed": [
+      20,
+      1,
+      12,
+      7
+    ],
+    "Fabricated": [
+      40,
+      0,
+      30,
+      10
+    ]
+  },
+  "gpt-oss-120b": {
+    "Correct": [
+      60,
+      12,
+      8,
+      40
+    ],
+    "Real w/ errors": [
+      30,
+      2,
+      16,
+      12
+    ],
+    "Misattributed": [
+      20,
+      2,
+      11,
+      7
+    ],
+    "Fabricated": [
+      40,
+      0,
+      37,
+      3
+    ]
+  }
+}

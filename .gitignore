@@ -9,4 +9,9 @@ backend/data/
 .ruff_cache/
 frontend/node_modules/
 frontend/dist/
-eval/runs/
+eval/runs/**
+!eval/runs/**/
+!eval/runs/**/summary.json
+!eval/runs/**/report.md
+!eval/runs/citebench_test3*/predictions.jsonl
+slides/node_modules/

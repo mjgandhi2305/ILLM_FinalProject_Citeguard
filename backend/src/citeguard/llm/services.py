@@ -338,6 +338,11 @@ class LLMExplainer:
             texts = [out.headline, out.recommendation] + [r.text for r in out.reasons]
             problems += validate_explanation(texts, [r.evidence_ids for r in out.reasons], bundle)
             problems += verdict_contradictions(out.headline, result.verdict)
+            if (
+                _with_verdict_prefix(out.headline, result.verdict)
+                == HEADLINE_PREFIX[result.verdict.value]
+            ):  # seen in the demo: "Real paper with errors:" and nothing after it
+                problems.append("headline must state the main finding after the verdict label")
             if not problems:
                 return (
                     Explanation(

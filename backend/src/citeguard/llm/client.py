@@ -24,7 +24,7 @@ from citeguard.sources.infra import Cache, NullCache
 log = structlog.get_logger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
-Effort = Literal["low", "medium", "high"]
+Effort = Literal["low", "medium", "high", "default"]
 LLM_CACHE_TTL_S = 30 * 24 * 3600
 PROMPT_VERSION = "2026-11-02"
 

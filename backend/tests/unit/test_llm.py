@@ -282,6 +282,16 @@ async def test_explainer_rejects_verdict_contradiction() -> None:
 
 
 @respx.mock
+async def test_explainer_rejects_a_headline_that_is_only_the_label() -> None:
+    empty = {**GOOD_EXPLANATION, "headline": "Likely fabricated:"}
+    route = respx.post(GROQ_URL).mock(side_effect=[completion(empty), completion(GOOD_EXPLANATION)])
+    expl, _ = await LLMExplainer(make_llm(), STAGE).explain(_fabricated_result())
+    assert expl is not None and expl.headline != "Likely fabricated:"
+    retry_prompt = json.loads(route.calls[1].request.content)["messages"][1]["content"]
+    assert "main finding" in retry_prompt
+
+
+@respx.mock
 async def test_engine_with_llm_never_fails_when_groq_is_down(
     make_sources: Callable[..., SourceSet],
 ) -> None:

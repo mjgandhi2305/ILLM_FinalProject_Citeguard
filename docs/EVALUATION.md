@@ -11,6 +11,7 @@ splits share a DOI.
 | `citebench_dev.jsonl` | 7 | Development and error analysis |
 | `citebench_test.jsonl` | 23 | First held-out split, scored once after the dev fixes |
 | `citebench_test2.jsonl` | 41 | Second held-out split, scored once after the fixes from `test` |
+| `citebench_test3.jsonl` | 59 | Third held-out split, built for the report and scored once with the final code (errors analysed, not fixed) |
 
 Each held-out split counts as held out only until its first score. After that, its errors were
 analysed and fixed, so later scores on it are optimistic.
@@ -39,6 +40,9 @@ cd backend
 .venv/bin/python -m citeguard.eval.run --dataset ../eval/datasets/citebench_dev.jsonl --mode no_llm
 .venv/bin/python -m citeguard.eval.run --dataset ../eval/datasets/citebench_dev.jsonl --mode full      # needs GROQ_API_KEY
 .venv/bin/python -m citeguard.eval.run --dataset ../eval/datasets/citebench_dev.jsonl --mode llm_only  # baseline, needs GROQ_API_KEY
+.venv/bin/python -m citeguard.eval.run --dataset ../eval/datasets/citebench_dev.jsonl --mode llm_only \
+    --llm-model qwen/qwen3.8-27b --name citebench_dev-llm_only-qwen   # any Groq model, no fallback
+.venv/bin/python -m citeguard.eval.run --dataset ../eval/datasets/citebench_dev.jsonl --mode doi_only  # HALLMARK's DOI-lookup baseline
 .venv/bin/python -m citeguard.eval.fit_linkage ../eval/runs/citebench_dev-no_llm/predictions.jsonl --out linkage.json
 ```
 
@@ -53,6 +57,53 @@ if interrupted, and source and LLM responses are cached, so re-runs are cheap.
 - Per-perturbation accuracy, latency (p50/p95), and LLM tokens per citation.
 
 ## Results (2026-11-02/03)
+
+### Fresh held-out split `test3` with baselines (2026-11-14)
+
+`test3` (seed 59) was built for the report and scored once with the final code, by every system,
+before any of its errors were examined. Those errors were then analysed but **not** fixed, so these
+numbers remain a held-out estimate. They are the main result of the report (`paper/main.pdf`).
+
+| System | Accuracy | Macro-F1 | Fake precision | Fake recall | Fake F1 | Correct citations called fake | Real citations called fake | LLM tokens / citation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Offline heuristics only | 0.400 | 0.145 | 1.000 | 0.050 | 0.095 | 0.0% | 0.0% | 0 |
+| DOI lookup only (HALLMARK baseline) | 0.400 | 0.150 | — | 0.000 | 0.000 | 0.0% | 11.1% | 0 |
+| LLM-only, `gpt-oss-20b` | 0.473 | 0.323 | 0.632 | 0.800 | 0.706 | 10.0% | 31.1% | 784 |
+| LLM-only, `qwen/qwen3.8-27b` | 0.367 | 0.264 | 0.506 | 0.700 | 0.587 | 31.7% | 45.6% | 220 |
+| LLM-only, `gpt-oss-120b` | 0.327 | 0.244 | 0.667 | 0.800 | 0.727 | 13.3% | 26.7% | 671 |
+| CiteGuard, exact matching only | **0.967** | **0.970** | 1.000 | 1.000 | 1.000 | 0.0% | 0.0% | 0 |
+| CiteGuard, `no_llm` | 0.960 | 0.964 | 1.000 | 1.000 | 1.000 | 0.0% | 0.0% | 0 |
+| CiteGuard, `full` | 0.960 | 0.964 | 1.000 | 1.000 | 1.000 | 0.0% | 0.0% | 241 |
+
+- **Every CiteGuard variant finds all 60 fakes and calls no real citation fake.** The best LLM-only
+  judge calls 13% of perfectly correct citations fake, and Qwen 32%. `gpt-oss-120b` answers "unsure"
+  for 40 of the 60 correct citations; Qwen returned invalid structured output for 27 of 150 even
+  after a retry (counted as unsure).
+- **The DOI lookup detects no fake**: fabricated titles either have no DOI or borrow a real one that
+  resolves. Its only flags are the 10 real papers cited with a non-existent DOI.
+- **Exact matching scores one citation higher than `no_llm`**, and `full` makes exactly the same
+  predictions as `no_llm`. On synthetic citations, fuzzy linkage and the LLM do not improve verdicts;
+  the gains came from parsing and the decision rules, which every CiteGuard rung shares.
+- **The six CiteGuard errors** are all correct citations labelled `VERIFIED_WITH_ERRORS` (none called
+  fake): "Gastrointestinal Stem Cells. II. …" cut at "II."; an IEEE title containing "(1998)" whose
+  year was taken as the publication year; a Japanese record with ALL-CAPS names and volume "2017.23";
+  and three citations rendered from garbled index metadata ("PG Student, D. o. S. E. C. c. J. H. I.").
+- Latency is not reported for `test3`: the `no_llm` and `full` runs used a source cache already filled
+  by the exact-matching run.
+
+**Self-check.** CiteGuard on the report's own 30 references (`paper/verify_references.py`): 28
+verified, 2 `VERIFIED_WITH_ERRORS`, 0 fake. Both flags are false alarms from how indexes record the
+work (Crossref lists an LNCS paper under its series; Semantic Scholar gives an arXiv record the volume
+`abs/1706.04599`).
+
+**Found by recording the demo** (`demo/record_demo.js`), outside the benchmark:
+
+18. The explainer once returned the headline "Real paper with errors:" with nothing after the label.
+    The validator now rejects a label-only headline and asks again (regression test in
+    `tests/unit/test_llm.py`).
+19. Not fixed: one LLM reason inferred that a citation "may have been assembled from mixed sources".
+    It cited real evidence IDs and quoted nothing false, so it passed the validator. The validator
+    checks values and evidence IDs, not the soundness of an inference.
 
 ### Held-out estimates (the honest numbers)
 
@@ -250,8 +301,7 @@ After fixes 14–17, all three splits score 150/150 in `no_llm` mode (not a held
 
 ## Next steps
 
-1. Build a fresh synthetic split and score it once in `no_llm` and `full` mode (about 40K Groq
-   tokens), for an honest estimate of the current code.
+1. ~~Build a fresh synthetic split and score it once~~: done (`test3`, above).
 2. **Chatbot-written split**: prompt Groq-hosted models for literature reviews with references
    on niche topics, then label each reference by hand (two annotators on a subset, report Cohen's κ).
    This is where the LLM parser, adjudicator and query reformulation should matter most.

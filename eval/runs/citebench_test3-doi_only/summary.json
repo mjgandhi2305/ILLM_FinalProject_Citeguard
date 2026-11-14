@@ -1,0 +1,116 @@
+{
+  "n": 150,
+  "accuracy": 0.4,
+  "macro_f1": 0.15,
+  "fake_detection": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "false_positive_rate_on_real": 0.1111111111111111,
+    "real_flagged_unverifiable": 0.0
+  },
+  "ece": 0.30533333333333335,
+  "confusion": {
+    "VERIFIED": {
+      "VERIFIED": 60,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "VERIFIED_WITH_ERRORS": {
+      "VERIFIED": 20,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 10,
+      "UNVERIFIABLE": 0
+    },
+    "MISATTRIBUTED": {
+      "VERIFIED": 20,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "FABRICATED": {
+      "VERIFIED": 40,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "UNVERIFIABLE": {
+      "VERIFIED": 0,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    }
+  },
+  "by_perturbation": {
+    "author_swap": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    },
+    "bogus_doi": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 1.0
+    },
+    "borrowed_doi": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    },
+    "fabricated": {
+      "n": 30,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    },
+    "none": {
+      "n": 60,
+      "accuracy": 1.0,
+      "fake_detected": 0.0
+    },
+    "venue_swap": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    },
+    "wrong_doi": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    },
+    "year_shift": {
+      "n": 10,
+      "accuracy": 0.0,
+      "fake_detected": 0.0
+    }
+  },
+  "by_split": {
+    "perturbed": {
+      "n": 90,
+      "accuracy": 0.0,
+      "fake_detected": 0.1111111111111111
+    },
+    "real": {
+      "n": 60,
+      "accuracy": 1.0,
+      "fake_detected": 0.0
+    }
+  },
+  "latency_ms": {
+    "p50": 0,
+    "p95": 370
+  },
+  "llm_tokens_per_citation": 0.0,
+  "llm_explanation_pass_rate": null,
+  "gold_distribution": {
+    "FABRICATED": 40,
+    "VERIFIED": 60,
+    "MISATTRIBUTED": 20,
+    "VERIFIED_WITH_ERRORS": 30
+  }
+}

@@ -1,0 +1,10 @@
+Offline heuristics only & 0.400 & 0.145 & \textbf{1.000} & 0.050 & 0.095 & \textbf{0.0} & \textbf{0.0} & 0 \\
+DOI lookup only~\citep{kim2026hallmark} & 0.400 & 0.150 & -- & 0.000 & 0.000 & \textbf{0.0} & 11.1 & 0 \\
+\midrule
+LLM-only, \texttt{gpt-oss-20b} & 0.473 & 0.323 & 0.632 & 0.800 & 0.706 & 10.0 & 31.1 & 784 \\
+LLM-only, \texttt{qwen3.8-27b} & 0.367 & 0.264 & 0.506 & 0.700 & 0.587 & 31.7 & 45.6 & 220 \\
+LLM-only, \texttt{gpt-oss-120b} & 0.327 & 0.244 & 0.667 & 0.800 & 0.727 & 13.3 & 26.7 & 671 \\
+\midrule
+CiteGuard, exact matching only & \textbf{0.967} & \textbf{0.970} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0.0} & \textbf{0.0} & 0 \\
+CiteGuard, deterministic (\texttt{no\_llm}) & 0.960 & 0.964 & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0.0} & \textbf{0.0} & 0 \\
+CiteGuard, full (Groq LLM) & 0.960 & 0.964 & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0.0} & \textbf{0.0} & 241 \\

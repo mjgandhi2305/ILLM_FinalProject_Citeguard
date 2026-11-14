@@ -1,0 +1,15 @@
+{
+  "papers": 25,
+  "supported": {
+    "SUPPORTS": 25
+  },
+  "unsupported": {
+    "NOT_SUPPORTED": 23,
+    "CANNOT_DETERMINE": 2
+  },
+  "false_alarm_rate": 0.0,
+  "support_rate": 1.0,
+  "detection_rate": 0.92,
+  "ungrounded": 1,
+  "tokens_per_check": 546
+}

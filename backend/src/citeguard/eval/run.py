@@ -8,6 +8,9 @@ Modes (the ablation ladder of the design doc):
     no_llm       full deterministic pipeline (fuzzy linkage, rules, templates)
     full         full pipeline with Groq (parsing, adjudication, reformulation, explanations)
     llm_only     baseline: ask the LLM "is this citation real?" with no retrieval
+                 (--llm-model picks the model; no fallback to other models)
+    doi_only     baseline: flag a citation only when its DOI does not resolve (the DOI-lookup
+                 baseline of HALLMARK); citations without a DOI are not flagged
 
 Predictions are appended as they finish, so an interrupted run resumes where it stopped."""
 
@@ -23,7 +26,7 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from citeguard.config import get_settings
-from citeguard.domain.models import CheckOptions, CitationResult, Verdict
+from citeguard.domain.models import CheckOptions, CitationResult, LookupStatus, Verdict
 from citeguard.engine import Engine, make_cache
 from citeguard.eval.dataset import BenchItem, load
 from citeguard.eval.metrics import Prediction, markdown_report, summarize
@@ -34,7 +37,7 @@ from citeguard.parse.heuristic import parse_heuristic
 from citeguard.parse.identifiers import normalize_doi
 from citeguard.screen.heuristics import screen
 
-Mode = Literal["heuristics", "exact", "no_llm", "full", "llm_only"]
+Mode = Literal["heuristics", "exact", "no_llm", "full", "llm_only", "doi_only"]
 RUNS_DIR = Path(__file__).resolve().parents[4] / "eval" / "runs"
 
 
@@ -110,16 +113,20 @@ class _Judgement(BaseModel):
     reason: str
 
 
-async def _llm_only_predictions(items: list[BenchItem], out: Path) -> None:
+async def _llm_only_predictions(items: list[BenchItem], out: Path, model: str | None) -> None:
     from citeguard.llm.client import StageConfig
     from citeguard.llm.services import build_llm_services
 
     settings = get_settings()
     if not settings.llm_available:
         raise SystemExit("llm_only needs GROQ_API_KEY")
+    # A baseline measures one model, so a failed call must not fall back to another one.
+    settings = settings.model_copy(update={"llm_fallback_models": []})
     services = build_llm_services(settings, cache=make_cache(settings))
     llm = services.explainer.llm  # type: ignore[union-attr]
-    stage = StageConfig(settings.llm_model_explain, "medium", 1500)
+    model = model or settings.llm_model_explain
+    # gpt-oss takes low/medium/high; other Groq reasoning models (Qwen) only take "default".
+    stage = StageConfig(model, "medium" if "gpt-oss" in model else "default", 1500)
     system = (
         "Decide whether the cited publication really exists exactly as cited, using only "
         "your own knowledge. Answer exists = yes, no, or unsure."
@@ -143,13 +150,45 @@ async def _llm_only_predictions(items: list[BenchItem], out: Path) -> None:
         _append(out, row)
 
 
+async def _doi_only_prediction(engine: Engine, item: BenchItem) -> dict[str, Any]:
+    started = time.perf_counter()
+    if item.input_kind == "bibtex":
+        refs, _ = parse_bibtex(item.text)
+        ref = refs[0] if refs else parse_heuristic(item.text)
+    else:
+        ref = parse_heuristic(item.text)
+    doi = normalize_doi(ref.ids.doi) if ref.ids.doi else None
+    pred, confidence = Verdict.VERIFIED, 0.5  # no DOI: nothing to check, nothing flagged
+    if doi and engine.sources is not None and engine.sources.doi is not None:
+        resp = await engine.sources.doi.registered(doi)
+        if resp.status == LookupStatus.NOT_FOUND:
+            pred, confidence = Verdict.FABRICATED, 0.9
+        elif resp.status == LookupStatus.FOUND:
+            confidence = 0.9
+    return Prediction(
+        id=item.id,
+        gold=item.label,
+        pred=pred,
+        confidence=confidence,
+        split=item.split,
+        perturbation=item.perturbation,
+        latency_ms=int((time.perf_counter() - started) * 1000),
+    ).__dict__
+
+
 def _append(path: Path, row: dict[str, Any]) -> None:
     with path.open("a") as fh:
         fh.write(json.dumps(row, default=str) + "\n")
 
 
 async def run(
-    dataset: Path, mode: Mode, limit: int | None, concurrency: int, name: str, explain: bool = False
+    dataset: Path,
+    mode: Mode,
+    limit: int | None,
+    concurrency: int,
+    name: str,
+    explain: bool = False,
+    llm_model: str | None = None,
 ) -> Path:
     items = load(dataset)[: limit or None]
     out_dir = RUNS_DIR / name
@@ -167,7 +206,11 @@ async def run(
         for it in todo:
             _append(pred_path, await _heuristic_prediction(it))
     elif mode == "llm_only":
-        await _llm_only_predictions(todo, pred_path)
+        await _llm_only_predictions(todo, pred_path, llm_model)
+    elif mode == "doi_only":
+        async with Engine(get_settings()) as engine:
+            for it in todo:
+                _append(pred_path, await _doi_only_prediction(engine, it))
     else:
         settings = get_settings()
         options = CheckOptions(
@@ -220,7 +263,9 @@ def main() -> None:
     )
     ap.add_argument("--dataset", type=Path, required=True)
     ap.add_argument(
-        "--mode", choices=["heuristics", "exact", "no_llm", "full", "llm_only"], default="no_llm"
+        "--mode",
+        choices=["heuristics", "exact", "no_llm", "full", "llm_only", "doi_only"],
+        default="no_llm",
     )
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--concurrency", type=int, default=4)
@@ -228,10 +273,21 @@ def main() -> None:
     ap.add_argument(
         "--explain", action="store_true", help="full mode: also generate LLM explanations"
     )
+    ap.add_argument("--llm-model", default=None, help="llm_only: the Groq model to ask")
     args = ap.parse_args()
     configure_logging("WARNING")
     name = args.name or f"{args.dataset.stem}-{args.mode}"
-    asyncio.run(run(args.dataset, args.mode, args.limit, args.concurrency, name, args.explain))
+    asyncio.run(
+        run(
+            args.dataset,
+            args.mode,
+            args.limit,
+            args.concurrency,
+            name,
+            args.explain,
+            args.llm_model,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+{
+  "name": "citeguard-slides",
+  "private": true,
+  "description": "Builds the ILLM final-project slide deck from the evaluation outputs",
+  "scripts": {
+    "build": "node build_deck.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "3.12.0"
+  }
+}

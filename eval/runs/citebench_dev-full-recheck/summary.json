@@ -1,0 +1,96 @@
+{
+  "n": 4,
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "fake_detection": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "false_positive_rate_on_real": 0.0,
+    "real_flagged_unverifiable": 0.0
+  },
+  "ece": 0.02124999999999999,
+  "confusion": {
+    "VERIFIED": {
+      "VERIFIED": 1,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "VERIFIED_WITH_ERRORS": {
+      "VERIFIED": 0,
+      "VERIFIED_WITH_ERRORS": 1,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "MISATTRIBUTED": {
+      "VERIFIED": 0,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 1,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    },
+    "FABRICATED": {
+      "VERIFIED": 0,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 1,
+      "UNVERIFIABLE": 0
+    },
+    "UNVERIFIABLE": {
+      "VERIFIED": 0,
+      "VERIFIED_WITH_ERRORS": 0,
+      "MISATTRIBUTED": 0,
+      "FABRICATED": 0,
+      "UNVERIFIABLE": 0
+    }
+  },
+  "by_perturbation": {
+    "author_swap": {
+      "n": 1,
+      "accuracy": 1.0,
+      "fake_detected": 1.0
+    },
+    "bogus_doi": {
+      "n": 1,
+      "accuracy": 1.0,
+      "fake_detected": 0.0
+    },
+    "fabricated": {
+      "n": 1,
+      "accuracy": 1.0,
+      "fake_detected": 1.0
+    },
+    "none": {
+      "n": 1,
+      "accuracy": 1.0,
+      "fake_detected": 0.0
+    }
+  },
+  "by_split": {
+    "perturbed": {
+      "n": 3,
+      "accuracy": 1.0,
+      "fake_detected": 0.6666666666666666
+    },
+    "real": {
+      "n": 1,
+      "accuracy": 1.0,
+      "fake_detected": 0.0
+    }
+  },
+  "latency_ms": {
+    "p50": 30,
+    "p95": 19379
+  },
+  "llm_tokens_per_citation": 1175.5,
+  "llm_explanation_pass_rate": 1.0,
+  "gold_distribution": {
+    "MISATTRIBUTED": 1,
+    "VERIFIED_WITH_ERRORS": 1,
+    "VERIFIED": 1,
+    "FABRICATED": 1
+  }
+}
