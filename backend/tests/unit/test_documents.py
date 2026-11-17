@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 
 from citeguard.domain.models import CitationType
-from citeguard.ingest.documents import docx_to_text, pdf_to_text, sniff_kind
+from citeguard.ingest.documents import docx_to_text, pdf_to_text, sniff_kind, strip_soft_hyphens
 from citeguard.ingest.grobid import tei_to_references
 from citeguard.ingest.text import extract_references
 
@@ -117,3 +117,14 @@ def test_grobid_tei_parsing() -> None:
     assert att.contexts and "Self-attention" in att.contexts[0]
     assert dl.ids.doi == "10.1038/nature14539" and dl.volume == "521"
     assert dl.type == CitationType.ARTICLE_JOURNAL and dl.container_title == "Nature"
+
+
+def test_pdf_hyphenation_marks_are_removed_so_titles_match() -> None:
+    # pdfium's line-end hyphenation marks, as seen in real uploaded references
+    assert (
+        strip_soft_hyphens("Conformalized quan\ufffetile regression")
+        == "Conformalized quantile regression"
+    )
+    assert strip_soft_hyphens("Un\ufffe\nleashing deep networks") == "Unleashing deep networks"
+    assert strip_soft_hyphens("trans\u00ad\r\nduction") == "transduction"
+    assert strip_soft_hyphens("a real-world hyphen stays") == "a real-world hyphen stays"

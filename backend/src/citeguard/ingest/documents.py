@@ -4,8 +4,18 @@ this module is the dependency-light fallback."""
 from __future__ import annotations
 
 import io
+import re
 
 MAX_PDF_PAGES = 300
+# pdfium marks a hyphenation point at a line end with U+FFFE (sometimes a soft hyphen, U+00AD),
+# often followed by the line break: "quan\ufffe\ntile" is the word "quantile". Left in, it breaks
+# title matching (a real reference looks like it has a typo).
+_SOFT_HYPHEN = re.compile(r"[\u00ad\ufffe]\r?\n?")
+
+
+def strip_soft_hyphens(text: str) -> str:
+    return _SOFT_HYPHEN.sub("", text)
+
 
 PDF_MAGIC = b"%PDF-"
 ZIP_MAGIC = b"PK\x03\x04"
@@ -52,7 +62,7 @@ def pdf_to_text(data: bytes, max_pages: int = MAX_PDF_PAGES) -> str:
             pages.append(textpage.get_text_range())
             textpage.close()
             page.close()
-        return "\n".join(pages)
+        return strip_soft_hyphens("\n".join(pages))
     finally:
         pdf.close()
 
