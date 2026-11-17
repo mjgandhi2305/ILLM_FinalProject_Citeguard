@@ -1,4 +1,5 @@
 import { settings } from "../lib/settings";
+import { cleanJson } from "../lib/text";
 import type {
   CheckCreated,
   CheckListItem,
@@ -47,7 +48,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   if (!res.ok) throw await errorFrom(res);
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  return JSON.parse(await res.text(), cleanJson) as T;
 }
 
 export type NewCheck =

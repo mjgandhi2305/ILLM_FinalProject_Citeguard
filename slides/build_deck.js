@@ -14,6 +14,10 @@ const RUNS = path.join(ROOT, "eval", "runs");
 const ASSETS = path.join(__dirname, "assets");
 const OUT = path.join(__dirname, "CiteGuard_ILLM_Final.pptx");
 const REPO = "https://github.com/mjgandhi2305/ILLM_FinalProject_Citeguard";
+const AUTHORS = [
+  { name: "Miten Gandhi", email: "mjgandhi2305@gmail.com" },
+  { name: "Vatsal Bateriwala", email: "vatsalbateriwala562005@gmail.com" },
+];
 
 const THEME = {
   name: "CiteGuard Academic",
@@ -67,7 +71,7 @@ const pct = (x) => `${Math.round(100 * x)}%`;
 // ------------------------------------------------------------------------------------------
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE"; // 13.333 x 7.5 in
-pres.author = "Miten Gandhi";
+pres.author = "Miten Gandhi, Vatsal Bateriwala";
 pres.title = "CiteGuard: LLM-Based Fake Citation Detection and Verification";
 pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
 const C = pres.SchemeColor;
@@ -147,10 +151,18 @@ function stat(s, x, y, w, big, label, color = NAVY) {
     valign: "top", isTextBox: true });
   s.addText("LLM-Based Fake Citation Detection and Verification System", {
     x: MX, y: 3.75, w: 11.6, h: 0.5, fontSize: 22, color: "DCE6F0", margin: 0, isTextBox: true });
-  s.addText([
-    { text: "Miten Gandhi", options: { bold: true, breakLine: true } },
-    { text: "Introduction to Large Language Models (ILLM) · Final Project · November 2026" },
-  ], { x: MX, y: 5.4, w: 11.6, h: 0.9, fontSize: 18, color: "FFFFFF", margin: 0, isTextBox: true });
+  AUTHORS.forEach((a, i) => {
+    s.addText([
+      { text: a.name, options: { bold: true, fontSize: 18, color: "FFFFFF", breakLine: true } },
+      { text: "Department of Artificial Intelligence", options: { breakLine: true } },
+      { text: "Sardar Vallabhbhai National Institute of Technology", options: { breakLine: true } },
+      { text: "Surat, India", options: { breakLine: true } },
+      { text: a.email, options: { color: "9DC3E6", hyperlink: { url: `mailto:${a.email}` } } },
+    ], { x: MX + i * 5.9, y: 4.6, w: 5.7, h: 1.55, fontSize: 13, color: "DCE6F0", margin: 0,
+      valign: "top", isTextBox: true });
+  });
+  s.addText("Introduction to Large Language Models (ILLM) · Final Project · November 2026", {
+    x: MX, y: 6.45, w: 11.6, h: 0.4, fontSize: 14, color: "FFFFFF", margin: 0, isTextBox: true });
 }
 
 // ------------------------------------------------------------------------------------------
@@ -592,7 +604,7 @@ function stat(s, x, y, w, big, label, color = NAVY) {
     { text: "web app (make up → localhost:8088), CLI, REST API, recorded video in demo/", options: { color: "DCE6F0" } },
   ], { x: MX, y: 5.35, w: 12.1, h: 1.4, fontSize: 16, margin: 0, valign: "top", paraSpaceAfter: 4,
     isTextBox: true });
-  s.addText("Miten Gandhi · ILLM Final Project · Questions welcome", { x: MX, y: 6.95, w: 12.1, h: 0.35,
+  s.addText(`${AUTHORS.map((a) => a.name).join(" & ")} · ILLM Final Project · Questions welcome`, { x: MX, y: 6.95, w: 12.1, h: 0.35,
     fontSize: 12, color: "9DC3E6", margin: 0, isTextBox: true });
 }
 

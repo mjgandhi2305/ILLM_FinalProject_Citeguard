@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, authHeaders } from "./client";
 import { streamEvents } from "./sse";
 import type { CheckOut, CitationSummary } from "./types";
+import { cleanJson } from "../lib/text";
 
 export const keys = {
   check: (id: string) => ["check", id] as const,
@@ -54,7 +55,7 @@ export function useLiveCheck(id: string) {
       `/api/v1/checks/${id}/events`,
       authHeaders(),
       ({ event, data }) => {
-        const payload = JSON.parse(data);
+        const payload = JSON.parse(data, cleanJson);
         if (event === "snapshot") {
           qc.setQueryData(keys.check(id), payload as CheckOut);
         } else if (event === "check.parsed") {

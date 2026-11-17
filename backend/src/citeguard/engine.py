@@ -152,6 +152,8 @@ class Engine:
             kind = "text"
         else:
             text = content.decode("utf-8", "replace") if isinstance(content, bytes) else content
+        # Text pasted or exported from a PDF carries the same hyphenation marks as an uploaded PDF
+        text = documents.strip_soft_hyphens(text)
 
         if kind == "bibtex":
             refs, warns = parse_bibtex(text)

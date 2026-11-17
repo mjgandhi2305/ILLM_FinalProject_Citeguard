@@ -91,7 +91,9 @@ def bibl_to_reference(bibl: object) -> ParsedReference | None:
 
 
 def tei_to_references(tei_xml: str) -> list[ParsedReference]:
-    root = ElementTree.fromstring(tei_xml)
+    from citeguard.ingest.documents import strip_soft_hyphens
+
+    root = ElementTree.fromstring(strip_soft_hyphens(tei_xml))
     refs = []
     for bibl in root.findall(".//tei:listBibl/tei:biblStruct", TEI):
         ref = bibl_to_reference(bibl)

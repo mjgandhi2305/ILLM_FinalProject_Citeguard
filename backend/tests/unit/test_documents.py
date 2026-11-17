@@ -128,3 +128,24 @@ def test_pdf_hyphenation_marks_are_removed_so_titles_match() -> None:
     assert strip_soft_hyphens("Un\ufffe\nleashing deep networks") == "Unleashing deep networks"
     assert strip_soft_hyphens("trans\u00ad\r\nduction") == "transduction"
     assert strip_soft_hyphens("a real-world hyphen stays") == "a real-world hyphen stays"
+
+
+async def test_pasted_text_and_bibtex_lose_pdf_hyphenation_marks_too() -> None:
+    # text copied out of a PDF carries the marks without ever passing through pdf_to_text
+    from citeguard.config import Settings
+    from citeguard.engine import Engine
+    from citeguard.sources.infra import NullCache
+
+    pasted = (
+        "References\n"
+        "[1] Y. LeCun, Y. Bengio and G. Hinton, “Deep learn￾ing,” Nature, vol. 521, 2015.\n"
+    )
+    bib = "@article{x, title={Hybrid transfer learn￾ing strategy}, author={Doe, Jane}, year={2024}}"
+    async with Engine(
+        Settings(cache_backend="none", groq_api_key=None), cache=NullCache()
+    ) as engine:
+        text_refs, _, _ = await engine.parse_input("text", pasted, use_llm=False)
+        bib_refs, _, _ = await engine.parse_input("bibtex", bib, use_llm=False)
+    for ref in [*text_refs, *bib_refs]:
+        assert "￾" not in ref.raw and "￾" not in (ref.title or ""), ref.raw
+    assert bib_refs[0].title == "Hybrid transfer learning strategy"
